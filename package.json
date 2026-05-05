@@ -12,11 +12,20 @@
       "require": "./dist/index.js"
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CybertronianKelvin/rep-counter.git"
+  },
+  "homepage": "https://CybertronianKelvin.github.io/rep-counter",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "jest",
     "test:watch": "jest --watch",
-    "lint": "eslint src tests"
+    "lint": "eslint src tests",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "fitness",
