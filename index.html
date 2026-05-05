@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rep-counter · Count reps from pose keypoints</title>
+  <meta name="description" content="Zero-dependency JavaScript library that counts exercise reps from pose detection keypoints. Works with MediaPipe, MoveNet, PoseNet.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0c0d0f;
+      --bg-elevated: #151619;
+      --bg-card: #1a1b1f;
+      --bg-card-hover: #222328;
+      --accent: #22c55e;
+      --accent-dim: #16a34a;
+      --accent-glow: rgba(34, 197, 94, 0.25);
+      --accent-subtle: rgba(34, 197, 94, 0.15);
+      --text: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #52525b;
+      --border: #27272a;
+      --border-light: #3f3f46;
+      --code-bg: #0f1115;
+    }
+    
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      overflow-x: hidden;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    /* Hero */
+    .hero {
+      width: 100%;
+      min-height: 92vh;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px 0;
+      position: relative;
+    }
+    
+    .hero-content {
+      position: relative;
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      margin-bottom: 60px;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      color: #0c0d0f;
+    }
+    
+    .logo-text {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 24px;
+    }
+    
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .nav-links a:hover {
+      color: var(--text);
+    }
+    
+    h1 {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+    
+    h1 .accent {
+      color: var(--accent);
+    }
+    
+    .hero-desc {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 540px;
+      margin-bottom: 40px;
+    }
+    
+    .hero-desc a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    
+    .hero-desc a:hover {
+      border-bottom-color: var(--accent);
+    }
+    
+    .hero-code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      max-width: 520px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .hero-code::before {
+      content: '';
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      display: flex;
+      gap: 6px;
+    }
+    
+    .hero-code .keyword { color: #c084fc; }
+    .hero-code .function { color: #60a5fa; }
+    .hero-code .string { color: var(--accent); }
+    .hero-code .comment { color: var(--text-muted); }
+    .hero-code .number { color: #f472b6; }
+    
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      color: #0c0d0f;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px var(--accent-glow);
+    }
+    
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      border-color: var(--border-light);
+      background: var(--bg-elevated);
+    }
+    
+    /* Stats */
+    .stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 60px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    /* Features Section */
+    .features {
+      padding: 100px 0;
+    }
+    
+    .section-header {
+      margin-bottom: 48px;
+    }
+    
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+    
+    h2 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    
+    .section-desc {
+      color: var(--text-secondary);
+      max-width: 500px;
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: all 0.25s;
+    }
+    
+    .feature-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+    
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--accent-subtle);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    .feature-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+    
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    
+    /* Flow Section */
+    .flow {
+      padding: 100px 0;
+      border-top: 1px solid var(--border);
+    }
+    
+    .flow-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 48px 0;
+    }
+    
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s;
+      opacity: 0.5;
+    }
+    
+    .flow-step.active {
+      opacity: 1;
+      border-color: var(--accent);
+      background: var(--accent-subtle);
+    }
+    
+    .flow-step:first-child.active {
+      border-color: #60a5fa;
+      background: rgba(96, 165, 250, 0.15);
+    }
+    
+    .flow-step:last-child.active {
+      border-color: var(--accent);
+      background: var(--accent-subtle);
+    }
+    
+    .flow-arrow {
+      color: var(--text-muted);
+      font-size: 1.25rem;
+    }
+    
+    /* Demo Section */
+    .demo {
+      padding: 100px 0;
+      border-top: 1px solid var(--border);
+    }
+    
+    .demo-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+    }
+    
+    .demo-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    
+    .demo-btn {
+      padding: 10px 18px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'IBM Plex Sans', sans-serif;
+    }
+    
+    .demo-btn:hover {
+      border-color: var(--border-light);
+      color: var(--text);
+    }
+    
+    .demo-btn.primary {
+      background: var(--accent);
+      color: #0c0d0f;
+      border-color: var(--accent);
+    }
+    
+    .demo-btn.primary:hover {
+      box-shadow: 0 6px 16px var(--accent-glow);
+    }
+    
+    .demo-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    
+    .demo-stat {
+      text-align: center;
+      padding: 20px;
+      background: var(--bg-elevated);
+      border-radius: 12px;
+    }
+    
+    .demo-stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    
+    .demo-stat-value.state {
+      font-size: 1.1rem;
+      color: #60a5fa;
+    }
+    
+    .demo-stat-value.feedback {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    
+    .demo-stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    /* Exercises */
+    .exercises {
+      padding: 100px 0;
+      border-top: 1px solid var(--border);
+    }
+    
+    .exercise-tags {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+    }
+    
+    .exercise-tag {
+      padding: 10px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .exercise-tag:hover {
+      border-color: var(--accent);
+    }
+    
+    /* Footer */
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    
+    .footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .footer a:hover {
+      color: var(--accent);
+    }
+    
+    @media (max-width: 640px) {
+      .stats { flex-direction: column; gap: 20px; }
+      .flow-visual { gap: 12px; }
+      .flow-arrow { display: none; }
+      .demo-stats { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <nav class="nav">
+          <div class="logo">
+            <div class="logo-icon">rc</div>
+            <span class="logo-text">rep-counter</span>
+          </div>
+          <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="https://github.com/fjogeleit/rep-counter" target="_blank">GitHub</a>
+          </div>
+        </nav>
+        
+        <h1>Count reps from<br><span class="accent">pose keypoints</span></h1>
+        
+        <p class="hero-desc">
+          Zero-dependency JS library that counts exercise reps from pose detection keypoints.
+          Works with <a href="https://mediapipe.dev" target="_blank">MediaPipe</a>, MoveNet, PoseNet — geometry-based rep counting, no neural networks.
+        </p>
+        
+        <div class="hero-code">
+          <code>
+            <span class="comment">// Import — no instantiation needed</span>
+            <span class="keyword">import</span> { countReps, getCount } <span class="keyword">from</span> <span class="string">'rep-counter'</span>;
+
+            <span class="comment">// Call with each frame</span>
+            <span class="keyword">const</span> result = countReps(keypoints, <span class="string">'push-ups'</span>);
+            <span class="comment">// → { repCount: <span class="number">5</span>, state: <span class="string">'UP'</span>, feedback: <span class="string">'Rep 5!'</span> }</span>
+          </code>
+        </div>
+        
+        <div class="hero-actions">
+          <a href="https://www.npmjs.com/package/rep-counter" class="btn btn-primary" target="_blank">
+            npm install rep-counter
+          </a>
+          <a href="#how-it-works" class="btn btn-secondary">
+            See how it works ↓
+          </a>
+        </div>
+        
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-value">9+</span>
+            <span class="stat-label">exercises + variations</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">0</span>
+            <span class="stat-label">dependencies</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">~1kb</span>
+            <span class="stat-label">minzipped</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Why rep-counter</div>
+        <h2>Built for developers</h2>
+        <p class="section-desc">
+          No ML models, no heavy dependencies. Just pure angle math that works with any pose detection output.
+        </p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
+          <h3>Zero dependencies</h3>
+          <p>Just the math. No PyTorch, no TensorFlow — doesn't run any ML itself.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.315 8.69c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.61-1.611a2.404 2.404 0 0 1 1.705-.706c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z"/>
+            </svg>
+          </div>
+          <h3>Framework agnostic</h3>
+          <p>Node.js, browser, React Native, Expo. The function doesn't care about your stack.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <h3>Debounced</h3>
+          <p>300ms minimum between reps prevents false positives from pose jitter.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </div>
+          <h3>TypeScript</h3>
+          <p>Full type definitions included. Works with inference, auto-complete, and type safety.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </div>
+          <h3>State machine</h3>
+          <p>Each exercise has a defined state machine. Rep counts on DOWN → UP transition.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </div>
+          <h3>Extensible</h3>
+          <p>Add custom exercises with just angle thresholds. No ML training needed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- How It Works -->
+  <section class="flow" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">How It Works</div>
+        <h2>Pipeline</h2>
+      </div>
+      
+      <button class="btn btn-secondary" onclick="runFlow()" style="margin-bottom: 24px;">▶ Run Flow</button>
+      
+      <div class="flow-visual" id="flow-visual">
+        <div class="flow-step" data-step="0">
+          <svg width="18" height="18" fill="none" stroke="#60a5fa" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M23 7l-2 2-2-2V3H5v2l-2 2 2 2v4l2 2 2-2 2 2 2-2 2 2V9l2-2 2-2z"/></svg>
+          Camera
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step" data-step="1">
+          <svg width="18" height="18" fill="none" stroke="#a78bfa" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="7.5" cy="6" r="1"/><circle cx="10.5" cy="6" r="1"/><circle cx="13.5" cy="6" r="1"/><circle cx="16.5" cy="6" r="1"/></svg>
+          MediaPipe
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step" data-step="2">
+          <svg width="18" height="18" fill="none" stroke="#f472b6" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="7" cy="12" r="2"/><circle cx="17" cy="12" r="2"/><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><line x1="12" y1="5" x2="12" y2="7"/><line x1="7" y1="12" x2="7" y2="19"/><line x1="17" y1="12" x2="17" y2="19"/></svg>
+          Keypoints
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step" data-step="3">
+          <svg width="18" height="18" fill="none" stroke="var(--accent)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><line x1="8" y1="10" x2="16" y2="10"/></svg>
+          rep-counter
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step" data-step="4">
+          <svg width="18" height="18" fill="none" stroke="var(--accent)" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+          Rep: 5
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Demo -->
+  <section class="demo">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Live Demo</div>
+        <h2>Try it</h2>
+        <p class="section-desc">
+          Paste pose keypoints (from MediaPipe/MoveNet) to test rep counting.
+        </p>
+      </div>
+      
+      <div class="demo-container">
+        <!-- Preset buttons -->
+        <div style="margin-bottom: 16px;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Quick test:</p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="demo-btn" onclick="setPreset('down')">Push-up DOWN</button>
+            <button class="demo-btn" onclick="setPreset('up')">Push-up UP</button>
+            <button class="demo-btn primary" onclick="runAutoDemo()">▶ Run Rep</button>
+            <button class="demo-btn" onclick="demoReset()">Reset</button>
+          </div>
+        </div>
+        
+        <!-- Manual input -->
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+            Or paste keypoints JSON:
+          </label>
+          <textarea id="pose-input" style="width: 100%; height: 80px; background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; resize: vertical;" placeholder='[{"x": 0.3, "y": 0.2}, {"x": 0.5, "y": 0.4}, {"x": 0.7, "y": 0.2}]'>[{"x": 0.25, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.75, "y": 0.2}]</textarea>
+          <button class="demo-btn" onclick="testPoseInput()" style="margin-top: 8px;">Test Pose →</button>
+        </div>
+        
+        <div class="demo-stats">
+          <div class="demo-stat">
+            <div class="demo-stat-value" id="demo-rep">0</div>
+            <div class="demo-stat-label">rep count</div>
+          </div>
+          <div class="demo-stat">
+            <div class="demo-stat-value state" id="demo-state">WAITING</div>
+            <div class="demo-stat-label">state</div>
+          </div>
+          <div class="demo-stat">
+            <div class="demo-stat-value feedback" id="demo-feedback">-</div>
+            <div class="demo-stat-label">feedback</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Exercises -->
+  <section class="exercises">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Built-in</div>
+        <h2>9 exercises + variations</h2>
+      </div>
+      
+      <div class="exercise-tags">
+        <span class="exercise-tag">Push-ups</span>
+        <span class="exercise-tag">Squats</span>
+        <span class="exercise-tag">Pull-ups</span>
+        <span class="exercise-tag">Dips</span>
+        <span class="exercise-tag">Burpees</span>
+        <span class="exercise-tag">Sit-ups</span>
+        <span class="exercise-tag">Lunges</span>
+        <span class="exercise-tag">Mountain Climbers</span>
+        <span class="exercise-tag">Jumping Jacks</span>
+      </div>
+      
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 16px;">
+        + incline push-ups, decline push-ups, jump squats, chin-ups, and more
+      </p>
+    </div>
+  </section>
+  
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container" style="display: flex; justify-content: space-between;">
+      <p>rep-counter · MIT License</p>
+      <a href="https://github.com/fjogeleit/rep-counter" target="_blank">View on GitHub →</a>
+    </div>
+  </footer>
+  
+  <script>
+    // Demo state
+    let repCount = 0;
+    let currentState = 'WAITING';
+    let lastRepTime = 0;
+    const MIN_TIME = 300;
+    
+    function calcAngle(a, b, c) {
+      const r = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+      let deg = Math.abs(r * 180 / Math.PI);
+      return deg > 180 ? 360 - deg : deg;
+    }
+    
+    function process(keypoints) {
+      const s = keypoints[0], e = keypoints[1], w = keypoints[2];
+      const a = calcAngle(s, e, w);
+      const now = Date.now();
+      let fb = 'Good form';
+      
+      if (currentState === 'WAITING' && a < 90) currentState = 'DOWN';
+      else if (currentState === 'DOWN' && a > 160 && now - lastRepTime > MIN_TIME) {
+        currentState = 'UP';
+        repCount++; lastRepTime = now; fb = 'Rep ' + repCount + '!';
+      } else if (currentState === 'UP' && a < 90) currentState = 'DOWN';
+      
+      return { state: currentState, feedback: fb };
+    }
+    
+    function testPoseInput() {
+      try {
+        const input = document.getElementById('pose-input').value;
+        const keypoints = JSON.parse(input);
+        const r = process(keypoints);
+        document.getElementById('demo-rep').textContent = repCount;
+        document.getElementById('demo-state').textContent = r.state;
+        document.getElementById('demo-feedback').textContent = r.feedback;
+      } catch(e) {
+        alert('Invalid JSON: ' + e.message);
+      }
+    }
+    
+    function demoReset() {
+      repCount = 0; currentState = 'WAITING'; lastRepTime = 0;
+      document.getElementById('demo-rep').textContent = '0';
+      document.getElementById('demo-state').textContent = 'WAITING';
+      document.getElementById('demo-feedback').textContent = '-';
+    }
+    
+    function setPreset(position) {
+      const keypoints = position === 'down' 
+        ? [{"x": 0.25, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.75, "y": 0.2}]  // bent arm (DOWN)
+        : [{"x": 0.25, "y": 0.2}, {"x": 0.5, "y": 0.3}, {"x": 0.75, "y": 0.2}]; // straight arm (UP)
+      document.getElementById('pose-input').value = JSON.stringify(keypoints, null, 2);
+      testPoseInput();
+    }
+    
+    function runAutoDemo() {
+      demoReset();
+      setTimeout(() => { setPreset('down'); }, 100);
+      setTimeout(() => { setPreset('up'); }, 600);
+      setTimeout(() => { setPreset('down'); }, 1100);
+      setTimeout(() => { setPreset('up'); }, 1600);
+    }
+    
+    // Flow animation
+    let flowRunning = false;
+    function runFlow() {
+      if (flowRunning) return;
+      flowRunning = true;
+      
+      const steps = document.querySelectorAll('.flow-step');
+      steps.forEach(s => s.classList.remove('active'));
+      
+      let i = 0;
+      function next() {
+        if (i < steps.length) steps[i].classList.add('active');
+        i++;
+        if (i < steps.length) setTimeout(next, 450);
+        else setTimeout(() => {
+          steps.forEach(s => s.classList.remove('active'));
+          flowRunning = false;
+        }, 900);
+      }
+      next();
+    }
+    
+    // Run flow animation on load
+    setTimeout(runFlow, 500);
+    
+    const flowSection = document.getElementById('flow-visual');
+    if (flowSection) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !flowRunning) {
+            runFlow();
+          }
+        });
+      }, { threshold: 0.5 });
+      observer.observe(flowSection);
+    }
+  </script>
+</body>
+</html>
