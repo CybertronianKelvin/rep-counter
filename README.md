@@ -2,6 +2,10 @@
 
 Zero-dependency rep counting engine for pose detection. Works with any pose model (MediaPipe, MoveNet, PoseNet) on Node.js, web, and React Native.
 
+[Image 1]: assets/rep-counter.png
+
+![rep-counter demo](assets/rep-counter.png)
+
 ## Installation
 
 ```bash
